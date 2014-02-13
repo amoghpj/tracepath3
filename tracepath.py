@@ -15,7 +15,7 @@ import gtk, gobject
 
 np.random.seed(1)
 
-SIZE = 1000
+SIZE = 3000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -25,11 +25,11 @@ Y_MIN = 0+10*ONE
 X_MAX = 1-10*ONE
 Y_MAX = 1-10*ONE
 
-TURTLE_ANGLE_NOISE = pi*0.03
-INIT_TURTLE_ANGLE_NOISE = pi*0.003
+TURTLE_ANGLE_NOISE = pi*0.03*0.5
+INIT_TURTLE_ANGLE_NOISE = pi*0.0003
 
 DIST_NEAR_INDICES = np.inf
-NUM_NEAR_INDICES = 40
+NUM_NEAR_INDICES = 20
 
 W = 0.9
 PIX_BETWEEN = 6.
@@ -74,34 +74,26 @@ def get_near_indices(tree,xy,d,k):
 
   return dist, data_inds.flatten()
 
+def alignment(the,dist):
+
+  dx = cos(the)
+  dy = sin(the)
+  ## inverse proporional distance scale
+
+  dx = np.sum(dx/dist)
+  dy = np.sum(dy/dist)
+
+  dd = (dx*dx+dy*dy)**0.5
+
+  return dx/dd,dy/dd
+
 
 class Render(object):
 
   def __init__(self,n):
 
     self.n = n
-    self.itt = 0
-
     self.__init_cairo()
-    self.__init_data()
-
-    self.num_img = 0
-
-  def __init_data(self):
-
-    self.num = 0
-
-    the = pi*0.5
-
-    the,xy = turtle(the,START_X,START_Y,NUMMAX)
-
-    self.line(xy)
-
-    self.XYS = xy
-    self.THES = the
-
-    self.num = len(self.XYS)
-    self.TS = cKDTree(self.XYS)
 
   def __init_cairo(self):
 
@@ -117,29 +109,35 @@ class Render(object):
 
   def line(self,xy):
 
-    self.ctx.set_source_rgba(0,0,0,0.8)
-    self.ctx.set_line_width(ONE)
+    self.ctx.set_source_rgba(0,0,0,0.6)
+    self.ctx.set_line_width(ONE*2.)
 
     self.ctx.move_to(xy[0,0],xy[0,1])
     for (x,y) in xy[1:]:
       self.ctx.line_to(x,y)
     self.ctx.stroke()
 
-  def alignment(self,the,dist):
 
-    dx = cos(the)
-    dy = sin(the)
-    ## inverse proporional distance scale
-    dx = np.sum(dx/dist)
-    dy = np.sum(dy/dist)
+def main():
 
-    dd = (dx*dx+dy*dy)**0.5
+  render = Render(SIZE)
 
-    return dx/dd,dy/dd
+  num = 0
 
-  def step(self):
+  the = pi*0.5
 
-    self.itt += 1
+  the,xy = turtle(the,START_X,START_Y,NUMMAX)
+
+  render.line(xy)
+
+  XYS = xy
+  THES = the
+
+  num = len(XYS)
+  TS = cKDTree(XYS)
+
+  for line_num in range(1,NUM_LINES):
+    print line_num, NUM_LINES
 
     xy_res = zeros((NUMMAX,2),'float')
     the_res = zeros(NUMMAX,'float')
@@ -147,35 +145,30 @@ class Render(object):
     #x = X_MIN + random()*(X_MAX-X_MIN)
     #y = Y_MIN + random()*(Y_MAX-Y_MIN)
 
-    x = START_X+self.itt*H
+    x = START_X+line_num*H
     y = START_Y
 
     xy_last = array([[x,y]])
-    the_last = random()*pi*2.
+    the_last = 0.5*pi
 
     xy_res[0,:] = xy_last
     the_res[0] = the_last
 
-    #noise = normal(size=NUMMAX)*TURTLE_ANGLE_NOISE
-
-    ## inverse the travel direction for every 2nd line.
-    ## but not the angle in the unstructured vector field (A)
-    #switch_dir = pi if not random()<0.5 else 0
-    switch_dir = 0
+    noise = normal(size=NUMMAX)*TURTLE_ANGLE_NOISE
 
     for i in xrange(1,NUMMAX):
 
-      k = NUM_NEAR_INDICES
-      d =  DIST_NEAR_INDICES
-      dist,inds = get_near_indices(self.TS,xy_last,d,k)
+      dist,inds = get_near_indices(TS,xy_last,\
+                                   DIST_NEAR_INDICES,\
+                                   NUM_NEAR_INDICES)
 
-      dx,dy = self.alignment(self.THES[inds],dist)
+      dist[dist<ONE] = ONE
+      dx,dy = alignment(THES[inds],dist)
 
       the = np.arctan2(dy,dx)
-      #the += noise[i]
+      the += noise[i]
 
-      xy_new = xy_last + array( [[cos(the+switch_dir),\
-                                  sin(the+switch_dir)]] )*ONE
+      xy_new = xy_last + array( [[cos(the),sin(the)]] )*ONE
       xy_res[i,:] = xy_new
       the_res[i] = the
 
@@ -187,24 +180,21 @@ class Render(object):
         the_res = the_res[:i]
         break
 
-    self.line(xy_res)
+    render.line(xy_res)
 
     ## replace all old nodes
-    self.XYS = xy_res
-    self.THES = the_res
+    XYS = xy_res
+    THES = the_res
 
-    self.num = len(self.THES)
+    num = len(THES)
 
-    self.TS = cKDTree(self.XYS)
+    TS = cKDTree(XYS)
 
-def main():
+    if not line_num%100:
 
-  render = Render(SIZE)
-  for i in range(NUM_LINES):
-    print i, NUM_LINES
-    render.step()
+      render.sur.write_to_png('res{:d}.png'.format(line_num))
 
-  render.sur.write_to_png('res.png')
+  render.sur.write_to_png('res_final.png')
 
 
 
