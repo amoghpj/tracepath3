@@ -13,9 +13,9 @@ from operator import itemgetter
 from scipy.spatial import cKDTree
 import gtk, gobject
 
-np.random.seed(1)
+#np.random.seed(1)
 
-SIZE = 3000
+SIZE = 20000
 ONE = 1./SIZE
 
 BACK = 1.
@@ -25,14 +25,11 @@ Y_MIN = 0+10*ONE
 X_MAX = 1-10*ONE
 Y_MAX = 1-10*ONE
 
-TURTLE_ANGLE_NOISE = pi*0.03*0.5
-INIT_TURTLE_ANGLE_NOISE = pi*0.0003
-
 DIST_NEAR_INDICES = np.inf
-NUM_NEAR_INDICES = 20
+NUM_NEAR_INDICES = 40
 
 W = 0.9
-PIX_BETWEEN = 6.
+PIX_BETWEEN = 11
 
 START_X = (1.-W)*0.5
 START_Y = (1.-W)*0.5
@@ -40,6 +37,18 @@ START_Y = (1.-W)*0.5
 NUMMAX = 2*SIZE
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
+
+FILENAME = 'kk_linear'
+
+TURTLE_ANGLE_NOISE = pi*0.08
+INIT_TURTLE_ANGLE_NOISE = pi*0.0003
+
+def myrandom(size):
+
+  #res = normal(size=size)
+  res = 1.-2.*random(size=size)
+
+  return res
 
 
 def turtle(sthe,sx,sy,steps):
@@ -59,7 +68,7 @@ def turtle(sthe,sx,sy,steps):
     XY[k,0] = x
     XY[k,1] = y
     THE[k] = the
-    the += normal()*INIT_TURTLE_ANGLE_NOISE
+    the += myrandom(size=1)*INIT_TURTLE_ANGLE_NOISE
 
     if x>X_MAX or x<X_MIN or y>Y_MAX or y<Y_MIN:
       XY = XY[:k,:]
@@ -78,10 +87,14 @@ def alignment(the,dist):
 
   dx = cos(the)
   dy = sin(the)
-  ## inverse proporional distance scale
 
-  dx = np.sum(dx/dist)
-  dy = np.sum(dy/dist)
+  ### inverse proporional distance scale
+  #dx = np.sum(dx/dist)
+  #dy = np.sum(dy/dist)
+
+  ## linear distance scale
+  dx = np.sum(dx*(1.-dist))
+  dy = np.sum(dy*(1.-dist))
 
   dd = (dx*dx+dy*dy)**0.5
 
@@ -110,7 +123,7 @@ class Render(object):
   def line(self,xy):
 
     self.ctx.set_source_rgba(0,0,0,0.6)
-    self.ctx.set_line_width(ONE*2.)
+    self.ctx.set_line_width(ONE*3.)
 
     self.ctx.move_to(xy[0,0],xy[0,1])
     for (x,y) in xy[1:]:
@@ -154,7 +167,7 @@ def main():
     xy_res[0,:] = xy_last
     the_res[0] = the_last
 
-    noise = normal(size=NUMMAX)*TURTLE_ANGLE_NOISE
+    noise = myrandom(size=NUMMAX)*TURTLE_ANGLE_NOISE
 
     for i in xrange(1,NUMMAX):
 
@@ -192,9 +205,9 @@ def main():
 
     if not line_num%100:
 
-      render.sur.write_to_png('res{:d}.png'.format(line_num))
+      render.sur.write_to_png('{:s}_{:d}.png'.format(FILENAME,line_num))
 
-  render.sur.write_to_png('res_final.png')
+  render.sur.write_to_png('{:s}_final.png'.format(FILENAME))
 
 
 
