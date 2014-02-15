@@ -5,7 +5,7 @@ from numpy import cos, sin, pi, arctan2, sqrt,\
                   square, linspace, zeros, array,\
                   concatenate, delete
 
-from numpy.random import random, normal, randint
+from numpy.random import random, normal, randint, shuffle
 import numpy as np
 import cairo
 from time import time as time
@@ -35,11 +35,11 @@ PIX_BETWEEN = 11
 START_X = (1.-W)*0.5
 START_Y = (1.-W)*0.5
 
-NUMMAX = int(1.5*SIZE)
+NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = 'ss_ls'
+FILENAME = 'tt_brownianbridge'
 
 TURTLE_ANGLE_NOISE = pi*0.1
 INIT_TURTLE_ANGLE_NOISE = 0
@@ -47,7 +47,19 @@ INIT_TURTLE_ANGLE_NOISE = 0
 def myrandom(size):
 
   #res = normal(size=size)
-  res = 1.-2.*random(size=size)
+
+  #res = 1.-2.*random(size=size)
+
+  ## almost but not entirely unlike a brownian bridge
+  rnd = 1.-2.*random(size=size/2)
+  res = concatenate((rnd,-rnd))
+  shuffle(res)
+  return res
+
+def myrandom1():
+
+  #res = normal(size=size)
+  res = 1.-2.*random(size=1)
 
   return res
 
@@ -62,6 +74,7 @@ def turtle(sthe,sx,sy,steps):
   THE[0] = sthe
   the = sthe
 
+  noise = myrandom(size=steps)*INIT_TURTLE_ANGLE_NOISE
   for k in xrange(1,steps):
 
     x = XY[k-1,0] + cos(the)*ONE
@@ -69,7 +82,7 @@ def turtle(sthe,sx,sy,steps):
     XY[k,0] = x
     XY[k,1] = y
     THE[k] = the
-    the += myrandom(size=1)*INIT_TURTLE_ANGLE_NOISE
+    the += noise[k]
 
     if x>X_MAX or x<X_MIN or y>Y_MAX or y<Y_MIN:
       XY = XY[:k,:]
