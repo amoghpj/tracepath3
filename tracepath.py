@@ -26,7 +26,8 @@ X_MAX = 1-10*ONE
 Y_MAX = 1-10*ONE
 
 DIST_NEAR_INDICES = np.inf
-NUM_NEAR_INDICES = 40
+NUM_NEAR_INDICES = 30
+SHIFT_INDICES = 5
 
 W = 0.9
 PIX_BETWEEN = 11
@@ -34,14 +35,14 @@ PIX_BETWEEN = 11
 START_X = (1.-W)*0.5
 START_Y = (1.-W)*0.5
 
-NUMMAX = 2*SIZE
+NUMMAX = int(1.5*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = 'kk_linear'
+FILENAME = 'ss_ls'
 
-TURTLE_ANGLE_NOISE = pi*0.08
-INIT_TURTLE_ANGLE_NOISE = pi*0.0003
+TURTLE_ANGLE_NOISE = pi*0.1
+INIT_TURTLE_ANGLE_NOISE = 0
 
 def myrandom(size):
 
@@ -77,9 +78,23 @@ def turtle(sthe,sx,sy,steps):
 
   return THE, XY
 
+#def get_near_indices(tree,xy,d,k):
+
+  #dist,data_inds = tree.query(xy,k=k,distance_upper_bound=d,eps=ONE)
+
+  #return dist, data_inds.flatten()
+
 def get_near_indices(tree,xy,d,k):
 
   dist,data_inds = tree.query(xy,k=k,distance_upper_bound=d,eps=ONE)
+
+  dist = dist.flatten()
+  data_inds = data_inds.flatten()
+
+  sort_inds = np.argsort(data_inds)
+
+  dist = dist[sort_inds]
+  data_inds = data_inds[sort_inds]
 
   return dist, data_inds.flatten()
 
@@ -175,7 +190,10 @@ def main():
                                    DIST_NEAR_INDICES,\
                                    NUM_NEAR_INDICES)
 
-      dist[dist<ONE] = ONE
+      #dist[dist<ONE] = ONE
+      dist = dist[SHIFT_INDICES:]
+      inds = inds[SHIFT_INDICES:]
+
       dx,dy = alignment(THES[inds],dist)
 
       the = np.arctan2(dy,dx)
