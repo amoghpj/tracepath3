@@ -39,9 +39,9 @@ NUMMAX = int(2*SIZE)
 NUM_LINES = int(SIZE*W/PIX_BETWEEN)
 H = W/NUM_LINES
 
-FILENAME = 'tt_brownianbridge'
+FILENAME = 'yy_brownianbridge'
 
-TURTLE_ANGLE_NOISE = pi*0.1
+TURTLE_ANGLE_NOISE = pi*0.05
 INIT_TURTLE_ANGLE_NOISE = 0
 
 def myrandom(size):
