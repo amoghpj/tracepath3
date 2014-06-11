@@ -15,7 +15,7 @@ import gtk, gobject
 
 #np.random.seed(1)
 
-SIZE = 20000
+SIZE = 1000
 ONE = 1./SIZE
 
 BACK = 1.
